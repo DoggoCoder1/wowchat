@@ -1,40 +1,44 @@
 import asyncio
 import os
-from websockets import serve
 from aiohttp import web
+import websockets
 
 clients = set()
-PORT = int(os.environ.get("PORT", 10000))
+
+# PORT for Render health check
+HTTP_PORT = int(os.environ.get("PORT", 10000))
+# Fixed port for WebSocket server
+WS_PORT = 8765
 
 # WebSocket handler
-async def ws_handler(ws):
-    clients.add(ws)
+async def ws_handler(websocket):
+    clients.add(websocket)
     try:
-        async for msg in ws:
+        async for msg in websocket:
             for client in clients:
-                if client != ws:
+                if client != websocket:
                     await client.send(msg)
     finally:
-        clients.remove(ws)
+        clients.remove(websocket)
 
-# Health check route for Render
-async def healthcheck(request):
+# HTTP server handler (used only for Render's health check)
+async def handle_healthcheck(request):
     return web.Response(text="OK")
 
-async def start_servers():
-    # Start WebSocket server
-    ws_server = await serve(ws_handler, "0.0.0.0", PORT)
-    print(f"WebSocket server running on port {PORT}")
-
-    # Start HTTP server (on same port)
+async def main():
+    # Start dummy HTTP server
     app = web.Application()
-    app.add_routes([web.get("/", healthcheck)])
+    app.router.add_get("/", handle_healthcheck)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    site = web.TCPSite(runner, "0.0.0.0", HTTP_PORT)
     await site.start()
+    print(f"HTTP server running on port {HTTP_PORT} (for health checks)")
 
-    # Keep running
-    await asyncio.Future()
+    # Start WebSocket server
+    await websockets.serve(ws_handler, "0.0.0.0", WS_PORT)
+    print(f"WebSocket server running on port {WS_PORT}")
 
-asyncio.run(start_servers())
+    await asyncio.Future()  # Run forever
+
+asyncio.run(main())
