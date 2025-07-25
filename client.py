@@ -8,18 +8,18 @@ async def chat():
         name = input("Enter your name: ")
 
         async def send():
+            await websocket.send(f"{name} joined yay")
             while True:
                 print("> ", end="", flush=True)
                 msg = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
                 msg = msg.rstrip()
                 if msg:
-                    await websocket.send(f"{name}: {msg}")
+                    await websocket.send(f"wowdog16 \x1b[1;31mOwner\x1b[0m: {msg}")
 
         async def receive():
             while True:
                 try:
                     message = await websocket.recv()
-                    # Clear current input line, print message, then reprint prompt
                     print(f"\r{message}\n> ", end="", flush=True)
                 except websockets.exceptions.ConnectionClosed:
                     print("\nDisconnected.")
