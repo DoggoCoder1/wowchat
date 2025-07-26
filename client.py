@@ -14,7 +14,7 @@ async def chat():
                 msg = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
                 msg = msg.rstrip()
                 if msg:
-                    await websocket.send(f"wowdog16 \x1b[1;31mOwner\x1b[0m: {msg}")
+                    await websocket.send(f"{name} \x1b[1;31mbeta tester\x1b[0m: {msg}")
 
         async def receive():
             while True:
